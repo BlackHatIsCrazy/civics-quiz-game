@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Civics Card Quiz Game</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet" />
+<style>
+  body {
+    font-family: 'Poppins', Arial, sans-serif;
+    background: linear-gradient(135deg, #1f1f1f, #000000);
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+  }
+  #game-container {
+    background: #111;
+    width: 420px;
+    border-radius: 16px;
+    box-shadow:
+      0 0 12px 3px rgba(33, 150, 243, 0.5),
+      0 4px 20px rgba(0, 0, 0, 0.8);
+    padding: 25px 30px;
+    text-align: center;
+    position: relative;
+  }
+  #top-score, #score, #timer, #question, #answers, #next-btn, #final-score {
+    /* Initially hide quiz elements except Start button */
+    display: none;
+  }
+  #start-btn {
+    font-size: 1.3em;
+    padding: 16px 40px;
+    border-radius: 14px;
+    background: #2196f3;
+    border: none;
+    color: white;
+    cursor: pointer;
+    box-shadow: 0 0 12px #2196f3;
+    transition: background 0.3s, transform 0.15s ease, box-shadow 0.3s;
+  }
+  #start-btn:hover {
+    background: #1769aa;
+    transform: scale(1.05);
+    box-shadow: 0 0 24px #1769aa;
+  }
+  #top-score {
+    font-weight: 700;
+    font-size: 1.4em;
+    text-align: right;
+    margin-bottom: 12px;
+    color: #ffd700;
+    text-shadow: 0 0 8px #ffd700;
+  }
+  #score {
+    font-weight: 700;
+    font-size: 1.2em;
+    text-align: right;
+    margin-bottom: 12px;
+    color: #64b5f6;
+    text-shadow: 0 0 6px #64b5f6;
+  }
+  #timer {
+    font-weight: 700;
+    font-size: 1.2em;
+    color: #f44336;
+    margin-bottom: 20px;
+    text-shadow: 0 0 6px #f44336;
+    transition: all 0.3s ease;
+  }
+  #timer.pulse {
+    animation: pulse-red 1s infinite alternate;
+  }
+  @keyframes pulse-red {
+    from {
+      text-shadow: 0 0 6px #f44336, 0 0 12px #f44336;
+      transform: scale(1);
+    }
+    to {
+      text-shadow: 0 0 14px #f44336, 0 0 28px #f44336;
+      transform: scale(1.05);
+    }
+  }
+  #question {
+    font-size: 1.4em;
+    margin-bottom: 25px;
+    min-height: 70px;
+    font-weight: 600;
+    color: #e0e0e0;
+    text-shadow: 0 0 8px #2196f3;
+  }
+  .answer-btn {
+    display: block;
+    width: 100%;
+    padding: 14px 0;
+    margin: 10px 0;
+    background: #2196f3;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 1.1em;
+    font-weight: 600;
+    box-shadow: 0 0 10px #2196f3;
+    transition: background 0.3s, transform 0.15s ease, box-shadow 0.3s;
+  }
+  .answer-btn:hover:not(:disabled) {
+    background: #1769aa;
+    transform: scale(1.05);
+    box-shadow: 0 0 20px #1769aa;
+  }
+  .answer-btn:disabled {
+    cursor: default;
+    opacity: 0.65;
+    box-shadow: none;
+    transform: none;
+  }
+  .correct {
+    background: #4caf50 !important;
+    box-shadow: 0 0 16px #4caf50 !important;
+  }
+  .wrong {
+    background: #f44336 !important;
+    box-shadow: 0 0 16px #f44336 !important;
+  }
+  #next-btn {
+    margin-top: 22px;
+    padding: 14px 25px;
+    font-size: 1.1em;
+    border: none;
+    background: #007bff;
+    color: white;
+    border-radius: 12px;
+    cursor: pointer;
+    box-shadow: 0 0 14px #007bff;
+    transition: background 0.3s, transform 0.15s ease, box-shadow 0.3s;
+    display: none;
+  }
+  #next-btn:hover {
+    background: #0056b3;
+    transform: scale(1.07);
+    box-shadow: 0 0 24px #0056b3;
+  }
+  #final-score {
+    font-size: 1.6em;
+    margin-top: 28px;
+    font-weight: 700;
+    color: #64ffda;
+    text-shadow: 0 0 10px #64ffda;
+    animation: bounce 1s ease forwards;
+  }
+  @keyframes bounce {
+    0% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+    100% { transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+
+<div id="game-container">
+  <button id="start-btn">Start Game</button>
+  <div id="top-score">Top Score: 0</div>
+  <div id="score">Score: 0</div>
+  <div id="timer">Time left: 03:00</div>
+  <div id="question">Loading question...</div>
+  <div id="answers"></div>
+  <button id="next-btn">Next Question</button>
+  <div id="final-score"></div>
+</div>
+
+<script>
+  const questions = [
+    {
+      question: "What is the supreme law of the land?",
+      answers: ["The Constitution", "The Declaration of Independence", "The Bill of Rights", "The Federalist Papers"],
+      correct: 0
+    },
+    {
+      question: "Who makes federal laws?",
+      answers: ["The President", "Congress", "The Supreme Court", "The Senate"],
+      correct: 1
+    },
+    {
+      question: "What are the two parts of the U.S. Congress?",
+      answers: ["House and Senate", "Senate and Supreme Court", "President and Congress", "House and President"],
+      correct: 0
+    },
+    {
+      question: "How many U.S. Senators are there?",
+      answers: ["50", "100", "435", "200"],
+      correct: 1
+    },
+    {
+      question: "Who signs bills into law?",
+      answers: ["The Speaker of the House", "The President", "The Vice President", "The Chief Justice"],
+      correct: 1
+    },
+    {
+      question: "What is one right or freedom from the First Amendment?",
+      answers: ["Freedom of speech", "Right to bear arms", "Right to vote", "Right to trial by jury"],
+      correct: 0
+    },
+    {
+      question: "Who was the first President of the United States?",
+      answers: ["Abraham Lincoln", "George Washington", "Thomas Jefferson", "John Adams"],
+      correct: 1
+    },
+    {
+      question: "What do we call the first ten amendments to the Constitution?",
+      answers: ["The Declaration of Independence", "The Bill of Rights", "The Articles of Confederation", "The Federalist Papers"],
+      correct: 1
+    },
+    {
+      question: "What is the capital of the United States?",
+      answers: ["New York", "Washington, D.C.", "Los Angeles", "Chicago"],
+      correct: 1
+    },
+    {
+      question: "Who becomes President if the President can no longer serve?",
+      answers: ["Speaker of the House", "Vice President", "Secretary of State", "Chief Justice"],
+      correct: 1
+    }
+  ];
+
+  let currentQuestionIndex = 0;
+  let score = 0;
+  let topScore = 0;
+  let timerDuration = 180; // 3 minutes total for the game
+  let timeLeft = timerDuration;
+  let timerInterval;
+
+  // DOM Elements
+  const startBtn = document.getElementById('start-btn');
+  const topScoreDisplay = document.getElementById('top-score');
+  const scoreDisplay = document.getElementById('score');
+  const timerDisplay = document.getElementById('timer');
+  const questionDisplay = document.getElementById('question');
+  const answersDiv = document.getElementById('answers');
+  const nextBtn = document.getElementById('next-btn');
+  const finalScoreDiv = document.getElementById('final-score');
+
+  function startGame() {
+    // Reset game state
+    currentQuestionIndex = 0;
+    score = 0;
+    timeLeft = timerDuration;
+    scoreDisplay.textContent = `Score: ${score}`;
+    timerDisplay.textContent = `Time left: ${formatTime(timeLeft)}`;
+    finalScoreDiv.textContent = '';
+    nextBtn.textContent = 'Next Question';
+    
+    // Show game elements and hide start button
+    startBtn.style.display = 'none';
+    topScoreDisplay.style.display = 'block';
+    scoreDisplay.style.display = 'block';
+    timerDisplay.style.display = 'block';
+    questionDisplay.style.display = 'block';
+    answersDiv.style.display = 'block';
+
+    // Show the first question
+    showQuestion();
+
+    // Start the timer
+    timerInterval = setInterval(() => {
+      timeLeft--;
+      timerDisplay.textContent = `Time left: ${formatTime(timeLeft)}`;
+      if(timeLeft <= 10) {
+        timerDisplay.classList.add('pulse');
+      }
+      if (timeLeft <= 0) {
+        endGame();
+      }
+    }, 1000);
+  }
+
+  function formatTime(seconds) {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+  }
+
+  function showQuestion() {
+    resetState();
+
+    const currentQ = questions[currentQuestionIndex];
+    questionDisplay.textContent = currentQ.question;
+
+    // Shuffle answers
+    const answersShuffled = currentQ.answers
+      .map((answer, index) => ({ answer, index }))
+      .sort(() => Math.random() - 0.5);
+
+    answersShuffled.forEach(opt => {
+      const button = document.createElement('button');
+      button.textContent = opt.answer;
+      button.classList.add('answer-btn');
+      button.onclick = () => selectAnswer(button, opt.index === currentQ.correct);
+      answersDiv.appendChild(button);
+    });
+  }
+
+  function resetState() {
+    nextBtn.style.display = 'none';
+    timerDisplay.classList.remove('pulse');
+    while (answersDiv.firstChild) {
+      answersDiv.removeChild(answersDiv.firstChild);
+    }
+  }
+
+  function selectAnswer(selectedBtn, isCorrect) {
+    Array.from(answersDiv.children).forEach(btn => btn.disabled = true);
+
+    if (isCorrect) {
+      selectedBtn.classList.add('correct');
+      score++;
+      scoreDisplay.textContent = `Score: ${score}`;
+    } else {
+      selectedBtn.classList.add('wrong');
+      const buttons = Array.from(answersDiv.children);
+      buttons.forEach(btn => {
+        if (btn !== selectedBtn && btn.textContent === questions[currentQuestionIndex].answers[questions[currentQuestionIndex].correct]) {
+          btn.classList.add('correct');
+        }
+      });
+    }
+
+    if (currentQuestionIndex < questions.length - 1) {
+      nextBtn.style.display = 'inline-block';
+      nextBtn.onclick = () => {
+        currentQuestionIndex++;
+        showQuestion();
+      };
+    } else {
+      nextBtn.textContent = 'Finish';
+      nextBtn.style.display = 'inline-block';
+      nextBtn.onclick = () => endGame();
+    }
+  }
+
+  function endGame() {
+    clearInterval(timerInterval);
+    resetState();
+    questionDisplay.textContent = 'Game Over!';
+
+    if (score > topScore) {
+      topScore = score;
+      topScoreDisplay.textContent = `Top Score: ${topScore}`;
+    }
+
+    finalScoreDiv.textContent = `Your final score is ${score} out of ${questions.length}.`;
+
+    nextBtn.textContent = 'Restart Game';
+    nextBtn.style.display = 'inline-block';
+    nextBtn.onclick = () => {
+      startGame();
+    };
+
+    // Hide the timer once game ends
+    timerDisplay.style.display = 'none';
+  }
+
+  // Start button listener
+  startBtn.addEventListener('click', startGame);
+
+</script>
+
+</body>
+</html>
